@@ -1,9 +1,10 @@
 '''
-    @author: sunbaolin
-    @contact: baolin.sun@mail.sdu.edu.cn
-    @time: 2022.01.21
-    @file: resnet.py
-    @desc: resnet backbone
+Author: sunbaolin
+Date: 2022-02-07 18:39:47
+LastEditors: sunbaolin
+LastEditTime: 2022-02-07 18:40:04
+Description: file content
+FilePath: /iProject/model/backbones/resnet.py
 '''
 
 import torch
@@ -185,6 +186,7 @@ class ResNet(nn.Module):
             3, self.inplanes, kernel_size=7, stride=2, padding=3,
             bias=False)  # 输入3  输出inplanes  步长为2  填充为3   偏移量为false
         self.bn1 = norm_layer(self.inplanes)
+        self.relu = nn.ReLU(inplace=True)
         self.maxpool = nn.MaxPool2d(kernel_size=3, stride=2, padding=1)
         self.layer1 = self._make_layer(block, 64, layers[0])
         self.layer2 = self._make_layer(block,

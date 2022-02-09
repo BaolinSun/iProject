@@ -2,7 +2,7 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
-from nninit import xavier_init
+from ..nninit import xavier_init
 
 
 class FPN(nn.Module):
@@ -74,9 +74,7 @@ class FPN(nn.Module):
                                            padding=1)
                 self.fpn_convs.append(extra_fpn_conv)
 
-        self.init_weight()
-
-    def init_weight(self):
+    def init_weights(self):
         """Initialize the weights of FPN module."""
         for m in self.modules():
             if isinstance(m, nn.Conv2d):

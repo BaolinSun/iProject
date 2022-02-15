@@ -1,2 +1,10 @@
-checkpoints/*
+checkpoints/
 **/__pycache__
+runs/
+data/
+miou*
+eval_masks.json
+build/
+focalloss.egg-info/
+.vscode/
+models/losses/sigmoid_focal_loss/sigmoid_focal_loss_cuda*

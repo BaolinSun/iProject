@@ -2,8 +2,8 @@
 Author: sunbaolin
 Contact: baolin.sun@mail.sdu.edu.cn
 Date: 2022-02-07 18:40:55
-LastEditors: Please set LastEditors
-LastEditTime: 2022-02-09 17:22:10
+LastEditors: sunbaolin
+LastEditTime: 2022-02-16 21:09:13
 Description: file content
 FilePath: /iProject/config.py
 '''
@@ -41,12 +41,62 @@ dataset_base = Config({
     'label_map': None
 })
 
+backbone_base = Config({
+    'name': 'Base Backbone',
+    'path': 'path/to/checkpoints/weights',
+    'type': None,
+})
+
+resnet18_backbone = backbone_base.copy({
+    'name': 'resnet18',
+    'path': './checkpoints/resnet18-5c106cde.pth',
+    'type': 'ResNetBackbone',
+    'num_stages': 4,
+    'frozen_stages': 1,
+    'out_indices': (0, 1, 2, 3)
+})
+
+resnet34_backbone = backbone_base.copy({
+    'name': 'resnet34',
+    'path': './checkpoints/resnet34-333f7ec4.pth',
+    'type': 'ResNetBackbone',
+    'num_stages': 4,
+    'frozen_stages': 1,
+    'out_indices': (0, 1, 2, 3)
+})
+
+resnet50_backbone = backbone_base.copy({
+    'name': 'resnet50',
+    'path': './checkpoints/resnet50-19c8e357.pth',
+    'type': 'ResNetBackbone',
+    'num_stages': 4,
+    'frozen_stages': 1,
+    'out_indices': (0, 1, 2, 3)
+})
+
+resnet152_backbone = backbone_base.copy({
+    'name': 'resnet152',
+    'path': './checkpoints/resnet152-b121ed2d.pth',
+    'type': 'ResNetBackbone',
+    'num_stages': 4,
+    'frozen_stages': 1,
+    'out_indices': (0, 1, 2, 3)
+})
+
+fpn_base = Config({
+    # 'in_channels': [64, 128, 256, 512],
+    'in_channels': [256, 512, 1024, 2048],
+    'out_channels': 256,
+    'start_level': 0,
+    'num_outs': 5,
+})
+
 coco2017_dataset = dataset_base.copy({
     'name': 'COCO2017',
 
     'train_prefix': './data/coco/',
-    'train_info': 'annotations/instances_val2022.json',
-    'trainimg_prefix': 'val2017/',
+    'train_info': 'annotations/instances_train2022.json',
+    'trainimg_prefix': 'train2017/',
     'train_images': './data/coco/',
 
     'valid_prefix': './data/coco/',
@@ -65,13 +115,42 @@ coco_base_config = Config({
 model_base_config = coco_base_config.copy({
     'name': 'hisense',
 
+    'imgs_per_gpu': 8,
+    'workers_per_gpu': 1,
+    'num_gpus': 1,
+
+    # backbone
+    'backbone': resnet50_backbone,
+
+    # fpn
+    'fpn': fpn_base,
+
     # Dataset
     'dataset': coco2017_dataset,
     'num_classes': len(coco2017_dataset.class_names) + 1,
 
-    'imgs_per_gpu': 2,
-    'workers_per_gpu': 1,
-    'num_gpus': 1,
+    # pretrained
+    'pretrained': None,
+    'epoch_iters_start': 1,
+    'epoch_iters_total': 144,
+
+    # learn rate
+    'lr_config': dict(base_lr=0.01, step=[27, 33], warmup='linear', warmup_iters=500, warmup_ratio=0.01),
+
+    'train_show_interval': 5,
+
+    'test_cfg': dict(
+                nms_pre=500,
+                score_thr=0.1,
+                mask_thr=0.5,
+                update_thr=0.05,
+                kernel='gaussian',  # gaussian/linear
+                sigma=2.0,
+                max_per_img=30),
+
+    'model_path': 'checkpoints/runtime/model_resnet50_epoch_8.pth',
+    'input_source': 'data/coco/val2022',
+    'output_source': None
 })
 
 cfg = model_base_config.copy()

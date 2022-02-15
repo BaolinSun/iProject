@@ -1,22 +1,37 @@
 '''
 Author: sunbaolin
 Date: 2022-02-07 18:28:49
-LastEditors: Please set LastEditors
-LastEditTime: 2022-02-09 17:21:09
+LastEditors: sunbaolin
+LastEditTime: 2022-02-10 19:32:21
 Description: file content
 FilePath: /iProject/datasets/coco.py
 '''
 
 import torch
 import torch.nn as nn
+import torchvision
 import numpy as np
 import os
 
 from torch.utils.data import Dataset
-from torchvision.transforms import Compose
+# from torchvision.transforms import Compose
+from compose import Compose
 from pycocotools.coco import COCO
-from utils import LoadImageFromFile
+from .piplines import LoadImageFromFile, LoadAnnotations, Resize, RandomFlip, Normalize, Pad, DefaultFormatBundle, Collect
 
+
+
+# train
+train_process_pipelines = [
+    LoadImageFromFile(),
+    LoadAnnotations(with_bbox=True, with_mask=True),
+    Resize(img_scale=[(768, 512), (768, 480), (768, 448), (768, 416), (768, 384), (768, 352)], multiscale_mode='value', keep_ratio=True),
+    RandomFlip(flip_ratio=0.5),
+    Normalize(mean=[123.675, 116.28, 103.53], std=[58.395, 57.12, 57.375], to_rgb=True),
+    Pad(size_divisor=32),
+    DefaultFormatBundle(),
+    Collect(keys=['img', 'gt_bboxes', 'gt_labels', 'gt_masks'], meta_keys=('filename', 'ori_shape', 'img_shape', 'pad_shape', 'scale_factor', 'flip', 'img_norm_cfg'))
+]
 
 class CocoDataset(Dataset):
 
@@ -56,7 +71,7 @@ class CocoDataset(Dataset):
             self._set_group_flag()
 
         # process pipeline
-        self.transform = Compose(self.build_process_pipeline())
+        self.transform = Compose(train_process_pipelines)
 
         print('build datasets...')
 
@@ -100,11 +115,6 @@ class CocoDataset(Dataset):
     def _rand_another(self, idx):
         pool = np.where(self.flag == self.flag[idx])[0]
         return np.random.choice(pool)
-
-    def build_process_pipeline(self):
-        process_pipelines = []
-        process_pipelines.append(LoadImageFromFile())
-        return process_pipelines
 
     def prepare_train_img(self, idx):
         img_info = self.img_infos[idx]

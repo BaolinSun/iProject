@@ -1,5 +1,16 @@
+'''
+Author: sunbaolin
+Date: 2022-02-19 21:22:19
+LastEditors: sunbaolin
+LastEditTime: 2022-02-19 21:22:29
+FilePath: /iProject/models/heads/mask_feat_head.py
+Description: 
+
+'''
+
 import torch
 import torch.nn as nn
+
 from models.nninit import normal_init
 
 class MaskFeatHead(nn.Module):

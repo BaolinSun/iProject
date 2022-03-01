@@ -3,7 +3,7 @@ Author: sunbaolin
 Contact: baolin.sun@mail.sdu.edu.cn
 Date: 2022-02-07 18:40:55
 LastEditors: sunbaolin
-LastEditTime: 2022-02-16 21:09:13
+LastEditTime: 2022-02-28 20:34:36
 Description: file content
 FilePath: /iProject/config.py
 '''
@@ -74,6 +74,15 @@ resnet50_backbone = backbone_base.copy({
     'out_indices': (0, 1, 2, 3)
 })
 
+resnet101_backbone = backbone_base.copy({
+    'name': 'resnet101',
+    'path': './checkpoints/resnet101-5d3b4d8f.pth',
+    'type': 'ResNetBackbone',
+    'num_stages': 4,
+    'frozen_stages': 1,
+    'out_indices': (0, 1, 2, 3)
+})
+
 resnet152_backbone = backbone_base.copy({
     'name': 'resnet152',
     'path': './checkpoints/resnet152-b121ed2d.pth',
@@ -84,6 +93,7 @@ resnet152_backbone = backbone_base.copy({
 })
 
 fpn_base = Config({
+    'name': 'fpn',
     # 'in_channels': [64, 128, 256, 512],
     'in_channels': [256, 512, 1024, 2048],
     'out_channels': 256,
@@ -113,14 +123,14 @@ coco_base_config = Config({
 })
 
 model_base_config = coco_base_config.copy({
-    'name': 'hisense',
+    'name': 'ins_his',
 
     'imgs_per_gpu': 8,
     'workers_per_gpu': 1,
     'num_gpus': 1,
 
     # backbone
-    'backbone': resnet50_backbone,
+    'backbone': resnet101_backbone,
 
     # fpn
     'fpn': fpn_base,
@@ -130,12 +140,12 @@ model_base_config = coco_base_config.copy({
     'num_classes': len(coco2017_dataset.class_names) + 1,
 
     # pretrained
-    'pretrained': None,
-    'epoch_iters_start': 1,
+    'pretrained': 'checkpoints/runtime/model_resnet101_epoch_72.pth',
+    'epoch_iters_start': 73,
     'epoch_iters_total': 144,
 
     # learn rate
-    'lr_config': dict(base_lr=0.01, step=[27, 33], warmup='linear', warmup_iters=500, warmup_ratio=0.01),
+    'lr_config': dict(base_lr=0.01, step=[27, 33, 52], warmup='linear', warmup_iters=500, warmup_ratio=0.01),
 
     'train_show_interval': 5,
 

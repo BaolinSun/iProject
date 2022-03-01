@@ -1,3 +1,12 @@
+'''
+Author: sunbaolin
+Date: 2022-02-19 21:29:15
+LastEditors: sunbaolin
+LastEditTime: 2022-02-19 21:29:15
+FilePath: /iProject/models/nninit.py
+Description: 
+
+'''
 import numpy as np
 import torch.nn as nn
 

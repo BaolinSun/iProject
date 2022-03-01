@@ -2,7 +2,7 @@
 Author: sunbaolin
 Date: 2022-02-07 18:28:49
 LastEditors: sunbaolin
-LastEditTime: 2022-02-10 19:32:21
+LastEditTime: 2022-02-19 21:12:09
 Description: file content
 FilePath: /iProject/datasets/coco.py
 '''
@@ -42,105 +42,51 @@ class CocoDataset(Dataset):
                  img_prefix='',
                  seg_prefix=None,
                  test_mode=False,
-                 filter_empty_gt=True) -> None:
-        super().__init__()
+                 filter_empty_gt=True):
         self.ann_file = ann_file
         self.data_root = data_root
         self.img_prefix = img_prefix
         self.seg_prefix = seg_prefix
-        self.test_mode = test_mode
         self.proposal_file = None
+        self.test_mode = test_mode
         self.filter_empty_gt = filter_empty_gt
 
-        self.ann_file = os.path.join(self.data_root, self.ann_file)
-        self.img_prefix = os.path.join(self.data_root, self.img_prefix)
+        # join paths if data_root is specified
+        if self.data_root is not None:
+            if not os.path.isabs(self.ann_file):
+                self.ann_file = os.path.join(self.data_root, self.ann_file)
+            if not (self.img_prefix is None or os.path.isabs(self.img_prefix)):
+                self.img_prefix = os.path.join(self.data_root, self.img_prefix)
+            if not (self.seg_prefix is None or os.path.isabs(self.seg_prefix)):
+                self.seg_prefix = os.path.join(self.data_root, self.seg_prefix)
+            if not (self.proposal_file is None
+                    or os.path.isabs(self.proposal_file)):
+                self.proposal_file = os.path.join(self.data_root,
+                                              self.proposal_file)
+        # load annotations (and proposals)
 
         self.img_infos = self.load_annotations(self.ann_file)
-        '''TODO'''
-        self.proposals = None
 
-        # filter images too small or without ground truths.
+        if self.proposal_file is not None:
+            self.proposals = self.load_proposals(self.proposal_file)
+        else:
+            self.proposals = None
+        # filter images too small
         if not test_mode:
             valid_inds = self._filter_imgs()
             self.img_infos = [self.img_infos[i] for i in valid_inds]
             if self.proposals is not None:
                 self.proposals = [self.proposals[i] for i in valid_inds]
-
         # set group flag for the sampler
         if not self.test_mode:
             self._set_group_flag()
-
-        # process pipeline
-        self.transform = Compose(train_process_pipelines)
-
-        print('build datasets...')
+        # processing pipeline
+        self.pipeline = Compose(train_process_pipelines)
 
     def __len__(self):
         return len(self.img_infos)
 
-    def __getitem__(self, index):
-        if self.test_mode:
-            raise NotImplementedError
-        while True:
-            data = self.prepare_train_img(index)
-            if data is None:
-                index = self._rand_another(index)
-                continue
-            return data
-
-    def _filter_imgs(self, min_size=32):
-        """Filter images too small or without ground truths."""
-        valid_inds = []
-        ids_with_ann = set(_['image_id'] for _ in self.coco.anns.values())
-        for i, img_info in enumerate(self.img_infos):
-            if self.filter_empty_gt and self.img_ids[i] not in ids_with_ann:
-                continue
-            if min(img_info['width'], img_info['height']) >= min_size:
-                valid_inds.append(i)
-
-        return valid_inds
-
-    def _set_group_flag(self):
-        """Set flag according to image aspect ratio.
-
-        Images with aspect ratio greater than 1 will be set as group 1,
-        otherwise group 0.
-        """
-        self.flag = np.zeros(len(self), dtype=np.uint8)
-        for i in range(len(self)):
-            img_info = self.img_infos[i]
-            if img_info['width'] / img_info['height'] > 1:
-                self.flag[i] = 1
-
-    def _rand_another(self, idx):
-        pool = np.where(self.flag == self.flag[idx])[0]
-        return np.random.choice(pool)
-
-    def prepare_train_img(self, idx):
-        img_info = self.img_infos[idx]
-        ann_info = self.get_ann_info(idx)
-        results = dict(img_info=img_info, ann_info=ann_info)
-
-        if self.proposals is not None:
-            results['proposals'] = self.proposals[idx]
-
-        self.pre_pipeline(results)
-        return self.transform(results)
-
-    def pre_pipeline(self, results):
-        results['img_prefix'] = self.img_prefix
-        results['seg_prefix'] = self.seg_prefix
-        results['proposal_file'] = self.proposal_file
-        results['bbox_fields'] = []
-        results['mask_fields'] = []
-        results['seg_fields'] = []
-
-    def get_ann_info(self, idx):
-        img_id = self.img_infos[idx]['id']
-        ann_ids = self.coco.getAnnIds(imgIds=[img_id])
-        ann_info = self.coco.loadAnns(ann_ids)
-        return self._parse_ann_info(self.img_infos[idx], ann_info)
-
+    
     def load_annotations(self, ann_file):
         self.coco = COCO(ann_file)
         self.cat_ids = self.coco.getCatIds()
@@ -155,6 +101,33 @@ class CocoDataset(Dataset):
             info['filename'] = info['file_name']
             img_infos.append(info)
         return img_infos
+
+    def get_ann_info(self, idx):
+        img_id = self.img_infos[idx]['id']
+        ann_ids = self.coco.getAnnIds(imgIds=[img_id])
+        ann_info = self.coco.loadAnns(ann_ids)
+        return self._parse_ann_info(self.img_infos[idx], ann_info)
+    
+    
+    def pre_pipeline(self, results):
+        results['img_prefix'] = self.img_prefix
+        results['seg_prefix'] = self.seg_prefix
+        results['proposal_file'] = self.proposal_file
+        results['bbox_fields'] = []
+        results['mask_fields'] = []
+        results['seg_fields'] = []
+
+    
+    def _filter_imgs(self, min_size=32):
+        """Filter images too small or without ground truths."""
+        valid_inds = []
+        ids_with_ann = set(_['image_id'] for _ in self.coco.anns.values())
+        for i, img_info in enumerate(self.img_infos):
+            if self.filter_empty_gt and self.img_ids[i] not in ids_with_ann:
+                continue
+            if min(img_info['width'], img_info['height']) >= min_size:
+                valid_inds.append(i)
+        return valid_inds
 
     def _parse_ann_info(self, img_info, ann_info):
         """Parse bbox and mask annotation.
@@ -201,10 +174,56 @@ class CocoDataset(Dataset):
 
         seg_map = img_info['filename'].replace('jpg', 'png')
 
-        ann = dict(bboxes=gt_bboxes,
-                   labels=gt_labels,
-                   bboxes_ignore=gt_bboxes_ignore,
-                   masks=gt_masks_ann,
-                   seg_map=seg_map)
+        ann = dict(
+            bboxes=gt_bboxes,
+            labels=gt_labels,
+            bboxes_ignore=gt_bboxes_ignore,
+            masks=gt_masks_ann,
+            seg_map=seg_map)
 
         return ann
+
+
+    def _set_group_flag(self):
+        """Set flag according to image aspect ratio.
+
+        Images with aspect ratio greater than 1 will be set as group 1,
+        otherwise group 0.
+        """
+        self.flag = np.zeros(len(self), dtype=np.uint8)
+        for i in range(len(self)):
+            img_info = self.img_infos[i]
+            if img_info['width'] / img_info['height'] > 1:
+                self.flag[i] = 1
+
+    def _rand_another(self, idx):
+        pool = np.where(self.flag == self.flag[idx])[0]
+        return np.random.choice(pool)
+
+    def __getitem__(self, idx):
+        if self.test_mode:
+            return self.prepare_test_img(idx)
+        while True:
+            data = self.prepare_train_img(idx)
+            if data is None:
+                idx = self._rand_another(idx)
+                continue
+            return data
+
+    def prepare_train_img(self, idx):
+        img_info = self.img_infos[idx]
+        ann_info = self.get_ann_info(idx)
+        results = dict(img_info=img_info, ann_info=ann_info)
+        if self.proposals is not None:
+            results['proposals'] = self.proposals[idx]
+       
+        self.pre_pipeline(results)
+        return self.pipeline(results)
+
+    def prepare_test_img(self, idx):
+        img_info = self.img_infos[idx]
+        results = dict(img_info=img_info)
+        if self.proposals is not None:
+            results['proposals'] = self.proposals[idx]
+        self.pre_pipeline(results)
+        return self.pipeline(results)

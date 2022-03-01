@@ -2,7 +2,7 @@
 Author: sunbaolin
 Date: 2022-02-07 18:10:31
 LastEditors: sunbaolin
-LastEditTime: 2022-02-16 21:37:26
+LastEditTime: 2022-02-28 20:42:13
 Description: file content
 FilePath: /iProject/train.py
 '''
@@ -83,10 +83,14 @@ def train():
             set_lr(optimizer, 0.001)
             base_lr = 0.001
             cur_lr = 0.001
-        elif iter_nums >= cfg.lr_config['step'][1] and iter_nums <= cfg.epoch_iters_total:
+        elif iter_nums >= cfg.lr_config['step'][1] and iter_nums < cfg.lr_config['step'][2]:
             set_lr(optimizer, 0.0001)
             base_lr = 0.0001
             cur_lr = 0.0001
+        elif iter_nums >= cfg.lr_config['step'][2] and iter_nums <= cfg.epoch_iters_total:
+            set_lr(optimizer, 0.00001)
+            base_lr = 0.00001
+            cur_lr = 0.00001
         else:
             raise NotImplementedError("train epoch is done!")
 
@@ -175,7 +179,7 @@ def train():
         print(bcolors.HEADER + save_name + bcolors.ENDC)
         model.save_weights(save_name)
 
-        icmd = 'python inference.py --model-path checkpoints/runtime/model_resnet50_epoch_{}.pth --input-source data/coco/val2022 --eval'.format(iter_nums)
+        icmd = 'python inference.py --model-path checkpoints/runtime/model_' + cfg.backbone.name + '_epoch_{}.pth --input-source data/coco/val2022 --eval'.format(iter_nums)
         print(icmd)
         os.system(icmd)
 

@@ -3,7 +3,7 @@ Author: sunbaolin
 Contact: baolin.sun@mail.sdu.edu.cn
 Date: 2022-02-07 18:43:09
 LastEditors: sunbaolin
-LastEditTime: 2022-02-16 21:39:11
+LastEditTime: 2022-03-03 08:49:18
 Description: file content
 FilePath: /iProject/utils.py
 '''
@@ -13,8 +13,8 @@ import pycocotools.mask as maskutil
 
 class bcolors:
     HEADER = '\033[95m'
-    OKBLUE = '\033[1;94m'
-    OKGREEN = '\033[1;92m'
+    BLUE = '\033[1;94m'
+    GREEN = '\033[1;92m'
     WARNING = '\033[93m'
     FAIL = '\033[91m'
     ENDC = '\033[0m'

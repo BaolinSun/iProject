@@ -15,7 +15,6 @@ import time
 import os
 import argparse
 import torch.distributed as dist
-import pynvml
 
 from torch.utils.data import DataLoader
 from config import cfg
@@ -60,8 +59,6 @@ class Trainer:
         os.environ['MASTER_PORT'] = self.args.distributed_port
         dist.init_process_group(backend='nccl', init_method='env://', world_size=self.world_size, rank=self.rank) 
 
-        pynvml.nvmlInit()
-
     def init_datasets(self):
 
         self.log('Initializing datasets')
@@ -95,7 +92,7 @@ class Trainer:
 
         model = model.cuda(self.rank)
         model = model.train()
-        self.model = nn.parallel.DistributedDataParallel(model, device_ids=[self.rank])
+        self.model = nn.parallel.DistributedDataParallel(model, device_ids=[self.rank], find_unused_parameters=True)
 
         # optimizer
         self.optimizer = optim.SGD(model.parameters(), lr=0.01, momentum=0.9, weight_decay=0.0001)
@@ -107,7 +104,8 @@ class Trainer:
 
     def train(self):
         epoch_size = int(len(self.cocodata) / self.args.batch_size_per_gpu / self.world_size)
-        base_nums = self.args.epoch_start - 1
+        base_nums = self.args.epoch_start
+        writer_index = 0
         for epoch in range(self.args.epoch_start, self.args.epoch_end):
 
             start = time.time()
@@ -138,16 +136,9 @@ class Trainer:
             loss_ins = 0
             loss_cate = 0
 
-            self.writer.add_scalar('loss', losses.cpu().item(), global_step=writer_index)
-            self.writer.add_scalar('loss_ins', loss['loss_ins'].cpu().item(), global_step=writer_index)
-            self.writer.add_scalar('loss_cate', loss['loss_cate'].cpu().item(), global_step=writer_index)
-            writer_index += 1
-
             for i, data in enumerate(self.cocoloader):
 
-                if cfg.lr_config[
-                        'warmup'] is not None and base_nums < cfg.lr_config[
-                            'warmup_iters']:
+                if cfg.lr_config['warmup'] is not None and base_nums < cfg.lr_config['warmup_iters']:
                     warm_lr = get_warmup_lr(base_nums,
                                             cfg.lr_config['warmup_iters'],
                                             cfg.lr_config['base_lr'],
@@ -158,8 +149,7 @@ class Trainer:
                 else:
                     set_lr(self.optimizer, base_lr)
                     cur_lr = base_lr
-
-                last_time = time.time()
+                base_nums = base_nums + 1
 
                 # image
                 imgs = gradinator(data['img'].data[0].cuda())
@@ -197,6 +187,12 @@ class Trainer:
                 loss_sum = loss_sum + losses.cpu().item()
                 loss_ins = loss_ins + loss['loss_ins'].cpu().item()
                 loss_cate = loss_cate + loss['loss_cate'].cpu().item()
+
+                if self.rank == 0:
+                    self.writer.add_scalar('loss', losses.cpu().item(), global_step=writer_index)
+                    self.writer.add_scalar('loss_ins', loss['loss_ins'].cpu().item(), global_step=writer_index)
+                    self.writer.add_scalar('loss_cate', loss['loss_cate'].cpu().item(), global_step=writer_index)
+                    writer_index += 1
 
                 if i % cfg.train_show_interval == 0:
 
@@ -238,12 +234,10 @@ class Trainer:
 
 import time
 def test(rank, world_size):
-    pynvml.nvmlInit()
     meminfo = [0] * world_size
 
     while True:
-        meminfo[rank] = pynvml.nvmlDeviceGetMemoryInfo(pynvml.nvmlDeviceGetHandleByIndex(rank)).free
-        print('rank:', rank,meminfo)
+        print('rank:')
         time.sleep(1)
 
 import torch.multiprocessing as mp

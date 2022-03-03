@@ -2,7 +2,7 @@
 Author: sunbaolin
 Date: 2022-02-07 18:10:31
 LastEditors: sunbaolin
-LastEditTime: 2022-03-03 10:53:01
+LastEditTime: 2022-03-03 11:06:36
 Description: file content
 FilePath: /iProject/train.py
 '''
@@ -35,6 +35,7 @@ class Trainer:
         self.init_distributed(rank, world_size)
         self.init_datasets()
         self.init_model()
+        self.init_writer()
         self.train()
         self.cleanup()
 
@@ -136,6 +137,11 @@ class Trainer:
             loss_sum = 0
             loss_ins = 0
             loss_cate = 0
+
+            self.writer.add_scalar('loss', losses.cpu().item(), global_step=writer_index)
+            self.writer.add_scalar('loss_ins', loss['loss_ins'].cpu().item(), global_step=writer_index)
+            self.writer.add_scalar('loss_cate', loss['loss_cate'].cpu().item(), global_step=writer_index)
+            writer_index += 1
 
             for i, data in enumerate(self.cocoloader):
 

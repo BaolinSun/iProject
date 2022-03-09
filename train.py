@@ -95,7 +95,9 @@ class Trainer:
         self.model = nn.parallel.DistributedDataParallel(model, device_ids=[self.rank], find_unused_parameters=True)
 
         # optimizer
-        self.optimizer = optim.SGD(model.parameters(), lr=0.01, momentum=0.9, weight_decay=0.0001)
+        self.optimizer = optim.SGD(model.parameters(), lr=0.001, momentum=0.9, weight_decay=0.0001)
+        # self.optimizer = optim.RMSprop(model.parameters(), lr=0.01, momentum=0.9, weight_decay=0.0001)
+        # self.optimizer = optim.Adam(model.parameters(), lr=0.001, weight_decay=0.0001)
 
     def init_writer(self):
         if self.rank == 0:
@@ -111,26 +113,23 @@ class Trainer:
             start = time.time()
 
             if epoch < cfg.lr_config['step'][0]:
-                set_lr(self.optimizer, 0.01)
-                base_lr = 0.01
-                cur_lr = 0.01
-            elif epoch >= cfg.lr_config['step'][
-                    0] and epoch < cfg.lr_config['step'][1]:
-                set_lr(self.optimizer, 0.001)
                 base_lr = 0.001
                 cur_lr = 0.001
             elif epoch >= cfg.lr_config['step'][
-                    1] and epoch < cfg.lr_config['step'][2]:
-                set_lr(self.optimizer, 0.0001)
+                    0] and epoch < cfg.lr_config['step'][1]:
                 base_lr = 0.0001
                 cur_lr = 0.0001
             elif epoch >= cfg.lr_config['step'][
-                    2] and epoch <= cfg.epoch_iters_total:
-                set_lr(self.optimizer, 0.00001)
+                    1] and epoch < cfg.lr_config['step'][2]:
                 base_lr = 0.00001
                 cur_lr = 0.00001
+            elif epoch >= cfg.lr_config['step'][
+                    2] and epoch <= cfg.epoch_iters_total:
+                base_lr = 0.000001
+                cur_lr = 0.000001
             else:
                 raise NotImplementedError("train epoch is done!")
+            set_lr(self.optimizer, cur_lr)
 
             loss_sum = 0
             loss_ins = 0

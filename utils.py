@@ -8,8 +8,12 @@ Description: file content
 FilePath: /iProject/utils.py
 '''
 
+import cv2
 import numpy as np
 import pycocotools.mask as maskutil
+
+from scipy import ndimage
+from datasets.piplines import imresize
 
 class bcolors:
     HEADER = '\033[95m'
@@ -96,6 +100,7 @@ class Config(object):
 
 
 COCO_LABEL = [1]
+COCO_CLASSES = ('person', )
 def result2json(img_id, result):
     rel = []
     seg_pred = result[0][0].cpu().numpy().astype(np.uint8)
@@ -117,3 +122,52 @@ def result2json(img_id, result):
         re["segmentation"] = rle
         rel.append(re)
     return rel
+
+
+def result2image(img, result, score_thr=0.3):
+    if isinstance(img, str):
+        img = cv2.imread(img)
+    img_show = img.copy()
+    h, w, _ = img.shape
+
+    cur_result = result[0]
+    seg_label = cur_result[0]
+    seg_label = seg_label.cpu().numpy().astype(np.uint8)
+    cate_label = cur_result[1]
+    cate_label = cate_label.cpu().numpy()
+    score = cur_result[2].cpu().numpy()
+
+    vis_index = score > score_thr
+    seg_label = seg_label[vis_index]
+    cate_label = cate_label[vis_index]
+    cate_score = score[vis_index]
+    num_mask = seg_label.shape[0]
+
+    np.random.seed(512)
+    color_masks = [
+        np.random.randint(0, 256, (1, 3), dtype=np.uint8)
+        for _ in range(num_mask)
+    ]
+
+    for idx in range(num_mask):
+        # idx = -(idx+1)
+        if cate_label[idx] == 0:
+            cur_mask = seg_label[idx]
+            cur_mask = imresize(cur_mask, (w, h))
+            cur_mask = (cur_mask > 0.5).astype(np.uint8)
+            if cur_mask.sum() == 0:
+                continue
+            color_mask = color_masks[idx]
+            cur_mask_bool = cur_mask.astype(np.bool)
+            img_show[cur_mask_bool] = img[cur_mask_bool] * 0.5 + color_mask * 0.5
+
+            cur_cate = cate_label[idx]
+            cur_score = cate_score[idx]
+
+            label_text = COCO_CLASSES[cur_cate]
+            label_text += '={:.02f}'.format(cur_score)
+            center_y, center_x = ndimage.measurements.center_of_mass(cur_mask)
+            vis_pos = (int(center_x), int(center_y))
+            cv2.putText(img_show, label_text, vis_pos, cv2.FONT_HERSHEY_DUPLEX, 0.3, (255, 255, 255))
+
+    return img_show

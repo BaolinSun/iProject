@@ -145,7 +145,7 @@ model_base_config = coco_base_config.copy({
     'epoch_iters_total': 144,
 
     # learn rate
-    'lr_config': dict(base_lr=0.01, step=[27, 33, 52], warmup='linear', warmup_iters=500, warmup_ratio=0.01),
+    'lr_config': dict(base_lr=0.001, step=[27, 33, 52], warmup='linear', warmup_iters=500, warmup_ratio=0.01),
 
     'train_show_interval': 5,
 
@@ -158,7 +158,7 @@ model_base_config = coco_base_config.copy({
                 sigma=2.0,
                 max_per_img=30),
 
-    'model_path': 'checkpoints/runtime/model_resnet50_epoch_8.pth',
+    'model_path': 'checkpoints/runtime/model_resnet101_epoch_13.pth',
     'input_source': 'data/coco/val2022',
     'output_source': None
 })

@@ -15,12 +15,13 @@ import os
 import shutil
 import argparse
 import json
+import cv2
 
 from glob import glob
 from tqdm import tqdm
 from config import cfg
 from compose import Compose
-from utils import result2json
+from utils import result2json, result2image
 from models.ins_his import INS_HIS
 from eval_mask import run_eval_mask
 from datasets.piplines import LoadImage, Resize, Normalize, Pad, ImageToTensor, TestCollect, MultiScaleFlipAug
@@ -64,6 +65,11 @@ def inference(model_path, input_source, output_source = None, eval_flag=False, t
 
         with torch.no_grad():
             seg_result = model.forward(img=[img], img_meta=[img_info], return_loss=False)
+
+        if output_source != None:
+            img_show = result2image(imgpath, seg_result)
+            out_path = os.path.join(output_source, os.path.basename(imgpath))
+            cv2.imwrite(out_path, img_show)
 
         if eval_flag == True:
             try:

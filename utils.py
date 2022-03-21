@@ -8,12 +8,16 @@ Description: file content
 FilePath: /iProject/utils.py
 '''
 
+import os
 import cv2
 import numpy as np
+import pandas as pd
 import pycocotools.mask as maskutil
 
 from scipy import ndimage
 from datasets.piplines import imresize
+from tqdm import tqdm
+from tqdm.contrib import tzip
 
 class bcolors:
     HEADER = '\033[95m'
@@ -114,6 +118,8 @@ def result2json(img_id, result):
         re["image_id"] = img_id
         re["category_id"] = int(realclass)
         re["score"] = float(score)
+        if re["score"] < 0.3:
+            continue
         outmask = np.squeeze(seg_pred[j])
         outmask = outmask.astype(np.uint8)
         outmask=np.asfortranarray(outmask)
@@ -171,3 +177,69 @@ def result2image(img, result, score_thr=0.3):
             cv2.putText(img_show, label_text, vis_pos, cv2.FONT_HERSHEY_DUPLEX, 0.3, (255, 255, 255))
 
     return img_show
+
+
+def result2mask(img, result, score_thr=0.3):
+    if isinstance(img, str):
+        img = cv2.imread(img)
+    img_show = img.copy()
+    h, w, _ = img.shape
+    img_show = np.zeros_like(img)
+
+    cur_result = result[0]
+    seg_label = cur_result[0]
+    seg_label = seg_label.cpu().numpy().astype(np.uint8)
+    cate_label = cur_result[1]
+    cate_label = cate_label.cpu().numpy()
+    score = cur_result[2].cpu().numpy()
+
+    vis_index = score > score_thr
+    seg_label = seg_label[vis_index]
+    cate_label = cate_label[vis_index]
+    cate_score = score[vis_index]
+    num_mask = seg_label.shape[0]
+
+    np.random.seed(512)
+    color_masks = [
+        np.random.randint(0, 256, (1, 3), dtype=np.uint8)
+        for _ in range(num_mask)
+    ]
+
+    for idx in range(num_mask):
+        # idx = -(idx+1)
+        if cate_label[idx] == 0:
+            cur_mask = seg_label[idx]
+            cur_mask = imresize(cur_mask, (w, h))
+            cur_mask = (cur_mask > 0.5).astype(np.uint8)
+            if cur_mask.sum() == 0:
+                continue
+            color_mask = color_masks[idx]
+            cur_mask_bool = cur_mask.astype(np.bool)
+            img_show[cur_mask_bool] = 255
+
+    return img_show
+
+def run_eval_miou(pha_file, mask_file):
+    pha_list = os.listdir(pha_file)
+    mask_list = os.listdir(mask_file)
+    pha_list.sort()
+    mask_list.sort()
+
+    iou = []
+    for fpha, fmask in tzip(pha_list, mask_list):
+        pha = cv2.imread(os.path.join(pha_file, fpha))
+        mask = cv2.imread(os.path.join(mask_file, fmask))
+
+        intersection = np.sum(np.logical_and(mask, pha))
+        union = np.sum(np.logical_or(mask, pha))
+
+        if (union == 0) or (intersection == 0):
+            continue
+        iou_score = intersection / union
+        iou.append(iou_score)
+
+    iou = pd.DataFrame(columns = ['iou'], data = iou)
+    print(iou)
+    print('....  ...')
+    print('miou:', iou['iou'].mean())
+    print('....  ...')

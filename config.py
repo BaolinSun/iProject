@@ -105,13 +105,13 @@ coco2017_dataset = dataset_base.copy({
     'name': 'COCO2017',
 
     'train_prefix': './data/coco/',
-    'train_info': 'annotations/instances_train2022.json',
-    'trainimg_prefix': 'train2017/',
+    'train_info': 'annotations/instances_train2018.json',
+    'trainimg_prefix': 'train2018/',
     'train_images': './data/coco/',
 
     'valid_prefix': './data/coco/',
-    'valid_info': 'annotations/instances_val2022.json',
-    'validimg_prefix': 'val2017/',
+    'valid_info': 'annotations/instances_val2018.json',
+    'validimg_prefix': 'val2018/',
     'valid_images': './data/coco/',
     
     'label_map': COCO_LABEL_MAP
@@ -158,8 +158,12 @@ model_base_config = coco_base_config.copy({
                 sigma=2.0,
                 max_per_img=30),
 
-    'model_path': 'checkpoints/runtime/model_resnet101_epoch_13.pth',
-    'input_source': 'data/coco/val2022',
+    'model_path': 'checkpoints/light/model_resnet101_epoch_37.pth',
+    'input_source': 'data/background/valid/img',
+    'gt_source': 'data/background/valid/pha',
+    # 'input_source': 'tmp/img',
+    # 'gt_source': 'tmp/pha',
+    'mask_output': 'mask_output',
     'output_source': None
 })
 

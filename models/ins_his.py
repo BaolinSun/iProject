@@ -51,16 +51,16 @@ class INS_HIS(nn.Module):
                             start_level=0,
                             end_level=3,
 
-                            num_classes=128)
+                            num_classes=256)
         #this set only support resnet18 and resnet34 backbone
         self.bbox_head = MaskKernelHead(num_classes=2,
                             in_channels=256,
-                            seg_feat_channels=256,
-                            stacked_convs=2,
+                            seg_feat_channels=512,
+                            stacked_convs=4,
                             strides=[8, 8, 16, 32, 32],
-                            scale_ranges=((1, 56), (28, 112), (56, 224), (112, 448), (224, 896)),
+                            scale_ranges=((1, 96), (48, 192), (96, 384), (192, 768), (384, 2048)),
                             num_grids=[40, 36, 24, 16, 12],
-                            ins_out_channels=128)
+                            ins_out_channels=256)
         
         self.mode = mode
 
@@ -144,13 +144,10 @@ class INS_HIS(nn.Module):
 
         x = self.extract_feat(img)
         outs = self.bbox_head(x)
-        mask_feat_pred = self.mask_feat_head(
-                x[self.mask_feat_head.
-                  start_level:self.mask_feat_head.end_level + 1])
+        mask_feat_pred = self.mask_feat_head(x[self.mask_feat_head.start_level:self.mask_feat_head.end_level + 1])
         loss_inputs = outs + (mask_feat_pred, gt_bboxes, gt_labels, gt_masks, img_metas)
 
-        losses = self.bbox_head.loss(
-            *loss_inputs, gt_bboxes_ignore=gt_bboxes_ignore)
+        losses = self.bbox_head.loss(*loss_inputs, gt_bboxes_ignore=gt_bboxes_ignore)
         return losses
 
   

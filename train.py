@@ -41,7 +41,7 @@ class Trainer:
     def parse_args(self):
         parser = argparse.ArgumentParser()
         # Training setting
-        parser.add_argument('--batch-size-per-gpu', type=int, default=4)
+        parser.add_argument('--batch-size-per-gpu', type=int, default=2)
         parser.add_argument('--num-workers', type=int, default=8)
         parser.add_argument('--epoch-start', type=int, default=0)
         parser.add_argument('--epoch-end', type=int, default=144)
@@ -115,18 +115,15 @@ class Trainer:
             if epoch < cfg.lr_config['step'][0]:
                 base_lr = 0.001
                 cur_lr = 0.001
-            elif epoch >= cfg.lr_config['step'][
-                    0] and epoch < cfg.lr_config['step'][1]:
+            elif epoch >= cfg.lr_config['step'][0] and epoch < cfg.lr_config['step'][1]:
                 base_lr = 0.0001
                 cur_lr = 0.0001
-            elif epoch >= cfg.lr_config['step'][
-                    1] and epoch < cfg.lr_config['step'][2]:
+            elif epoch >= cfg.lr_config['step'][1] and epoch < cfg.lr_config['step'][2]:
+                base_lr = 0.0001
+                cur_lr = 0.0001
+            elif epoch >= cfg.lr_config['step'][2] and epoch <= cfg.epoch_iters_total:
                 base_lr = 0.00001
                 cur_lr = 0.00001
-            elif epoch >= cfg.lr_config['step'][
-                    2] and epoch <= cfg.epoch_iters_total:
-                base_lr = 0.000001
-                cur_lr = 0.000001
             else:
                 raise NotImplementedError("train epoch is done!")
             set_lr(self.optimizer, cur_lr)
@@ -182,6 +179,7 @@ class Trainer:
                     self.optimizer.step()
                 else:
                     NotImplementedError("loss type error!can't backward!")
+                    print("loss type error!can't backward!")
 
                 loss_sum = loss_sum + losses.cpu().item()
                 loss_ins = loss_ins + loss['loss_ins'].cpu().item()

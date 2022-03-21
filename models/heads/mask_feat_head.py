@@ -65,8 +65,7 @@ class MaskFeatHead(nn.Module):
                         padding=1,
                         bias=False),
 
-                        nn.GroupNorm(num_channels=self.out_channels,
-                        num_groups=32),
+                        nn.GroupNorm(num_channels=self.out_channels, num_groups=32),
 
                         nn.ReLU(inplace=False))
                     convs_per_level.add_module('conv' + str(j), one_conv)
@@ -84,8 +83,7 @@ class MaskFeatHead(nn.Module):
                     padding=1,
                     bias=False),
 
-                    nn.GroupNorm(num_channels=self.out_channels,
-                    num_groups=32),
+                    nn.GroupNorm(num_channels=self.out_channels,num_groups=32),
 
                     nn.ReLU(inplace=False))
                 convs_per_level.add_module('conv' + str(j), one_conv)
@@ -105,8 +103,7 @@ class MaskFeatHead(nn.Module):
                 padding=0,
                 bias = False),
 
-                nn.GroupNorm(num_channels=self.out_channels,
-                num_groups=32),
+                nn.GroupNorm(num_channels=self.num_classes, num_groups=32),
 
                 nn.ReLU(inplace=True))
 

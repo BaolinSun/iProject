@@ -158,12 +158,15 @@ model_base_config = coco_base_config.copy({
                 sigma=2.0,
                 max_per_img=30),
 
-    'model_path': 'checkpoints/light/model_resnet101_epoch_37.pth',
-    'input_source': 'data/background/valid/img',
-    'gt_source': 'data/background/valid/pha',
+    'model_path': 'checkpoints/model_resnet101_epoch_37.pth',
+    # 'input_source': 'data/coco/val2018',
+    'input_source': 'data/hisense/img',
+    # 'input_source': 'data/background/valid/img2',
+    # 'gt_source': 'data/background/valid/pha2',
+    'gt_source': 'data/hisense/mask',
     # 'input_source': 'tmp/img',
-    # 'gt_source': 'tmp/pha',
-    'mask_output': 'mask_output',
+    # 'gt_source': 'data/coco/maskval2018',
+    'mask_output': 'data/mask_output',
     'output_source': None
 })
 

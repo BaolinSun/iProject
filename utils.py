@@ -226,8 +226,8 @@ def run_eval_miou(pha_file, mask_file):
     mask_list.sort()
 
     iou = []
-    for fpha, fmask in tzip(pha_list, mask_list):
-        pha = cv2.imread(os.path.join(pha_file, fpha))
+    for fmask in tqdm(mask_list):
+        pha = cv2.imread(os.path.join(pha_file, fmask))
         mask = cv2.imread(os.path.join(mask_file, fmask))
 
         intersection = np.sum(np.logical_and(mask, pha))

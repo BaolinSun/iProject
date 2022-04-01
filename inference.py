@@ -73,9 +73,13 @@ def inference(model_path, input_source, output_source = None, eval_flag=False, j
             seg_result = model.forward(img=[img], img_meta=[img_info], return_loss=False)
 
         if eval_flag:
-            img_show = result2mask(imgpath, seg_result)
-            out_path = os.path.join(mask_file, os.path.basename(imgpath))
-            cv2.imwrite(out_path, img_show)
+            try:
+                img_show = result2mask(imgpath, seg_result)
+                out_path = os.path.join(mask_file, os.path.basename(imgpath))
+                # out_path = os.path.join(mask_file, os.path.basename(imgpath).split('.')[0]+'.png')
+                cv2.imwrite(out_path, img_show)
+            except:
+                pass
             
         if output_source != None:
             img_show = result2image(imgpath, seg_result)

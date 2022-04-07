@@ -101,6 +101,51 @@ fpn_base = Config({
     'num_outs': 5,
 })
 
+fpn_normal = fpn_base.copy({
+    'name': 'fpn',
+    # 'in_channels': [64, 128, 256, 512],
+    'in_channels': [256, 512, 1024, 2048],
+    'out_channels': 256,
+    'start_level': 0,
+    'num_outs': 5,
+})
+
+fpn_light = fpn_base.copy({
+    'name': 'fpn',
+    # 'in_channels': [64, 128, 256, 512],
+    'in_channels': [64, 128, 256, 512],
+    'out_channels': 256,
+    'start_level': 0,
+    'num_outs': 5,
+})
+
+kernel_head_base = Config({
+    'num_classes': 256,
+    'seg_feat_channels': 512,
+    'stacked_convs': 4,
+    'scale_ranges': ((1, 96), (48, 192), (96, 384), (192, 768), (384, 2048)),
+    'ins_out_channels': 256,
+    'img_scale': [(1333, 800), (1333, 768), (1333, 736), (1333, 704), (1333, 672), (1333, 640)]
+})
+
+kernel_head_normal = kernel_head_base.copy({
+    'num_classes': 256,
+    'seg_feat_channels': 512,
+    'stacked_convs': 4,
+    'scale_ranges': ((1, 96), (48, 192), (96, 384), (192, 768), (384, 2048)),
+    'ins_out_channels': 256,
+    'img_scale': [(1333, 800), (1333, 768), (1333, 736), (1333, 704), (1333, 672), (1333, 640)]
+})
+
+kernel_head_light = kernel_head_base.copy({
+    'num_classes': 128,
+    'seg_feat_channels': 256,
+    'stacked_convs': 2,
+    'scale_ranges': ((1, 56), (28, 112), (56, 224), (112, 448), (224, 896)),
+    'ins_out_channels': 128,
+    'img_scale': [(768, 512), (768, 480), (768, 448), (768, 416), (768, 384), (768, 352)]
+})
+
 coco2017_dataset = dataset_base.copy({
     'name': 'COCO2017',
 
@@ -131,9 +176,10 @@ model_base_config = coco_base_config.copy({
 
     # backbone
     'backbone': resnet101_backbone,
+    'kernel_head': kernel_head_normal,
 
     # fpn
-    'fpn': fpn_base,
+    'fpn': fpn_normal,
 
     # Dataset
     'dataset': coco2017_dataset,

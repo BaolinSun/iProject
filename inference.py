@@ -9,7 +9,7 @@ Description:
 '''
 
 
-from pkg_resources import evaluate_marker
+import sys
 import torch
 import torch.nn as nn
 import os
@@ -25,6 +25,8 @@ from compose import Compose
 from utils import result2json, result2image, result2mask, run_eval_miou
 from models.ins_his import INS_HIS
 from eval_mask import run_eval_mask
+from speed_test import speed_test
+from interact_segm import interact_segm
 from datasets.piplines import LoadImage, Resize, Normalize, Pad, ImageToTensor, TestCollect, MultiScaleFlipAug
 
 test_process_pipelines = [
@@ -107,6 +109,9 @@ def parse_args():
     parser.add_argument('--output', type=str, default=cfg.output_source)
     parser.add_argument('--gt_source', type=str, default=cfg.gt_source)
     parser.add_argument('--mask_output', type=str, default=cfg.mask_output)
+    parser.add_argument('--resolution', type=int, nargs=2, default=[1920, 1080])
+    parser.add_argument('--interact-segm', action="store_true")
+    parser.add_argument('--speed-test', action="store_true")
     parser.add_argument('--eval', action="store_true")
     parser.add_argument('--json', action="store_true")
     return parser.parse_args()
@@ -114,8 +119,15 @@ def parse_args():
 
 if __name__ == '__main__':
     args = parse_args()
-    # print(args.model_path, args.input_source, args.output_source, args.eval, args.eval_json)
     print(args)
+
+    if args.interact_segm:
+        interact_segm(args.model, args.input)
+        sys.exit()
+
+    if args.speed_test:
+        fps = speed_test(model_path = args.model, resolution=args.resolution)
+        sys.exit()
 
     inference(model_path = args.model,
             input_source = args.input,

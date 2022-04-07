@@ -51,16 +51,16 @@ class INS_HIS(nn.Module):
                             start_level=0,
                             end_level=3,
 
-                            num_classes=256)
+                            num_classes=cfg.kernel_head.num_classes)
         #this set only support resnet18 and resnet34 backbone
         self.bbox_head = MaskKernelHead(num_classes=2,
                             in_channels=256,
-                            seg_feat_channels=512,
-                            stacked_convs=4,
+                            seg_feat_channels=cfg.kernel_head.seg_feat_channels,
+                            stacked_convs=cfg.kernel_head.stacked_convs,
                             strides=[8, 8, 16, 32, 32],
-                            scale_ranges=((1, 96), (48, 192), (96, 384), (192, 768), (384, 2048)),
+                            scale_ranges=cfg.kernel_head.scale_ranges,
                             num_grids=[40, 36, 24, 16, 12],
-                            ins_out_channels=256)
+                            ins_out_channels=cfg.kernel_head.ins_out_channels)
         
         self.mode = mode
 

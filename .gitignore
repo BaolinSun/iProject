@@ -2,6 +2,8 @@ checkpoints/
 **/__pycache__
 runs/
 data/
+output/
+*.png
 miou*
 eval_masks.json
 build/

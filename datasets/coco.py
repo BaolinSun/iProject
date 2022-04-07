@@ -14,7 +14,7 @@ import numpy as np
 import os
 
 from torch.utils.data import Dataset
-# from torchvision.transforms import Compose
+from config import cfg
 from compose import Compose
 from pycocotools.coco import COCO
 from .piplines import LoadImageFromFile, LoadAnnotations, Resize, RandomFlip, Normalize, Pad, DefaultFormatBundle, Collect
@@ -25,7 +25,7 @@ from .piplines import LoadImageFromFile, LoadAnnotations, Resize, RandomFlip, No
 train_process_pipelines = [
     LoadImageFromFile(),
     LoadAnnotations(with_bbox=True, with_mask=True),
-    Resize(img_scale=[(1333, 800), (1333, 768), (1333, 736), (1333, 704), (1333, 672), (1333, 640)], multiscale_mode='value', keep_ratio=True),
+    Resize(img_scale=cfg.kernel_head.img_scale, multiscale_mode='value', keep_ratio=True),
     RandomFlip(flip_ratio=0.5),
     Normalize(mean=[123.675, 116.28, 103.53], std=[58.395, 57.12, 57.375], to_rgb=True),
     Pad(size_divisor=32),

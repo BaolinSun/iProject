@@ -155,8 +155,8 @@ coco2017_dataset = dataset_base.copy({
     'train_images': './data/coco/',
 
     'valid_prefix': './data/coco/',
-    'valid_info': 'annotations/instances_val2018.json',
-    'validimg_prefix': 'val2018/',
+    'valid_info': 'annotations/instances_val2019.json',
+    'validimg_prefix': 'val2019/',
     'valid_images': './data/coco/',
     
     'label_map': COCO_LABEL_MAP
@@ -205,14 +205,15 @@ model_base_config = coco_base_config.copy({
                 max_per_img=30),
 
     'model_path': 'checkpoints/model_resnet101_epoch_37.pth',
-    # 'input_source': 'data/coco/val2018',
-    'input_source': 'data/hisense/img',
-    # 'input_source': 'data/background/valid/img2',
+    'input_source': 'data/val2022',
+    'gt_source': 'data/val2022',
+    # 'input_source': 'data/coco/val2019',
+    # 'gt_source': 'data/coco/maskval2019',
+    # 'input_source': 'data/hisense/img',
+    # 'gt_source': 'data/hisense/mask',
+    # 'input_source': 'data/background/valid/img4',
     # 'gt_source': 'data/background/valid/pha2',
-    'gt_source': 'data/hisense/mask',
-    # 'input_source': 'tmp/img',
-    # 'gt_source': 'data/coco/maskval2018',
-    'mask_output': 'data/mask_output',
+    'output': 'data/output',
     'output_source': None
 })
 

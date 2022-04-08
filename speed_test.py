@@ -17,7 +17,7 @@ import numpy as np
 from glob import glob
 from tqdm import tqdm
 from config import cfg
-from config import resnet34_backbone
+from config import resnet18_backbone, resnet34_backbone
 from config import kernel_head_light
 from config import fpn_light
 from compose import Compose
@@ -52,7 +52,7 @@ test_process_pipelines = [
     ImageToTensor(keys=['img']),
     TestCollect(keys=['img']),
 ]
-Multest = MultiScaleFlipAug(transforms=test_process_pipelines, img_scale=(1333, 800), flip=False)
+Multest = MultiScaleFlipAug(transforms=test_process_pipelines, img_scale=(384, 384), flip=False)
 
 def speed_test(model_path, resolution):    
     test_pipeline = []
@@ -60,7 +60,8 @@ def speed_test(model_path, resolution):
     test_pipeline.append(Multest)
     test_pipeline = Compose(test_pipeline)
 
-    cfg.backbone = resnet34_backbone
+    model_path = 'checkpoints/model_resnet18_epoch_30.pth'
+    cfg.backbone = resnet18_backbone
     cfg.kernel_head = kernel_head_light
     cfg.fpn = fpn_light
     
@@ -69,7 +70,7 @@ def speed_test(model_path, resolution):
 
     start_time = time.time()
     count = 0
-    for i in tqdm(range(100)):
+    for i in tqdm(range(5000)):
 
         data = dict(img='tmp')
         data = test_pipeline(data)

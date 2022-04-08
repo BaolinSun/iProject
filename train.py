@@ -219,9 +219,9 @@ class Trainer:
             self.log(bcolors.HEADER + save_name + bcolors.ENDC)
             self.model.module.save_weights(save_name)
             self.log('Model saved')
-            icmd = 'python inference.py --model checkpoints/runtime/model_' + cfg.backbone.name + '_epoch_{}.pth --input data/coco/val2022 --eval'.format(epoch)
-            self.log(icmd)
-            os.system(icmd)
+            # icmd = 'python inference.py --model checkpoints/runtime/model_' + cfg.backbone.name + '_epoch_{}.pth --input data/coco/val2022 --output data/mask_output --mask'.format(epoch)
+            # self.log(icmd)
+            # os.system(icmd)
 
     def cleanup(self):
         dist.destroy_process_group()

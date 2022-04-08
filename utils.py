@@ -10,6 +10,8 @@ FilePath: /iProject/utils.py
 
 import os
 import cv2
+import re
+import shutil
 import numpy as np
 import pandas as pd
 import pycocotools.mask as maskutil
@@ -179,7 +181,7 @@ def result2image(img, result, score_thr=0.3):
     return img_show
 
 
-def result2mask(img, result, score_thr=0.3):
+def result2mask(img, result, score_thr=0.38):
     if isinstance(img, str):
         img = cv2.imread(img)
     img_show = img.copy()
@@ -219,7 +221,52 @@ def result2mask(img, result, score_thr=0.3):
 
     return img_show
 
-def run_eval_miou(pha_file, mask_file):
+def run_eval_miou(output):
+
+    mask_list = []
+    pha_list = []
+    for ffile in os.listdir(output):
+        for item in os.listdir(os.path.join(output, ffile)):
+            if item == 'mask':
+                for img in os.listdir(os.path.join(output, ffile, item)):
+                    mask_list.append(os.path.join(output, ffile, item, img))
+            # if item == 'label':
+            #     pha_file
+            #     for img in os.listdir(os.path.join(output, ffile, item)):
+            #         pha_list.append(os.path.join(output, ffile, item, img))
+
+    # pha_list = os.listdir(pha_file)
+    # mask_list = os.listdir(mask_file)
+    # pha_list.sort()
+    # mask_list.sort()
+
+    diou = {}
+    iou = []
+    for fmask in tqdm(mask_list):
+        # pha = cv2.imread(os.path.join(pha_file, fmask))
+        # mask = cv2.imread(os.path.join(mask_file, fmask))
+        pha = cv2.imread(re.sub('mask', 'label', fmask))
+        mask = cv2.imread(fmask)
+
+        intersection = np.sum(np.logical_and(mask, pha))
+        union = np.sum(np.logical_or(mask, pha))
+
+        if (union == 0) or (intersection == 0):
+            continue
+        iou_score = intersection / union
+        iou.append(iou_score)
+
+    iou = pd.DataFrame(columns = ['iou'], data = iou)
+    print(iou)
+    print('....  ...')
+    print('miou:', iou['iou'].mean())
+    print('....  ...')
+
+    # diou = pd.DataFrame.from_dict(data=diou, orient='index')
+    # diou.to_csv('test.csv')
+
+
+def run_eval_miou_simple(pha_file, mask_file):
     pha_list = os.listdir(pha_file)
     mask_list = os.listdir(mask_file)
     pha_list.sort()
@@ -243,3 +290,24 @@ def run_eval_miou(pha_file, mask_file):
     print('....  ...')
     print('miou:', iou['iou'].mean())
     print('....  ...')
+
+def prepare_output(input_sources, cfg):
+    # output = 'data/output'
+    if os.path.exists(cfg.output):
+        shutil.rmtree(cfg.output)
+    shutil.copytree(input_sources, cfg.output)
+    for ffile in os.listdir(cfg.output):
+        os.makedirs(os.path.join(cfg.output, ffile, 'mask'))
+        os.makedirs(os.path.join(cfg.output, ffile, 'pred'))
+
+def prepare_images(input_sources, itype='img'):
+    imgs = []
+    for ffile in os.listdir(input_sources):
+        for item in os.listdir(os.path.join(input_sources, ffile)):
+            if item == itype:
+                for img in os.listdir(os.path.join(input_sources, ffile, item)):
+                    imgs.append(os.path.join(input_sources, ffile, item, img))
+    return(imgs)
+
+if __name__ == '__main__':
+    prepare_output('data/val2022', None)

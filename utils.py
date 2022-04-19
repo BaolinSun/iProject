@@ -256,14 +256,18 @@ def run_eval_miou(output):
         iou_score = intersection / union
         iou.append(iou_score)
 
+        diou[fmask] = iou_score
+
     iou = pd.DataFrame(columns = ['iou'], data = iou)
     print(iou)
     print('....  ...')
     print('miou:', iou['iou'].mean())
     print('....  ...')
+    print('stab(iou>90%):', len(iou.values[iou.values>0.9])  / len(iou))
+    print('....  ...')
 
-    # diou = pd.DataFrame.from_dict(data=diou, orient='index')
-    # diou.to_csv('test.csv')
+    diou = pd.DataFrame.from_dict(data=diou, orient='index')
+    diou.to_csv('diou.csv')
 
 
 def run_eval_miou_simple(pha_file, mask_file):

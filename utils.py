@@ -220,6 +220,15 @@ def result2mask(img, result, score_thr=0.38):
             img_show[cur_mask_bool] = 255
 
     return img_show
+import logging
+
+logging.basicConfig(level=logging.INFO,#控制台打印的日志级别
+                    filename='miou.log',
+                    filemode='a',##模式，有w和a，w就是写模式，每次都会重新写日志，覆盖之前的日志
+                    #a是追加模式，默认如果不写的话，就是追加模式
+                    format='%(asctime)s - %(pathname)s[line:%(lineno)d] - %(levelname)s: %(message)s'
+                    #日志格式
+                    )
 
 def run_eval_miou(output):
 
@@ -268,6 +277,8 @@ def run_eval_miou(output):
 
     diou = pd.DataFrame.from_dict(data=diou, orient='index')
     diou.to_csv('diou.csv')
+
+    logging.info(iou['iou'].mean())
 
 
 def run_eval_miou_simple(pha_file, mask_file):

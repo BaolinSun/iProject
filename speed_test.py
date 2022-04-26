@@ -17,7 +17,7 @@ import numpy as np
 from glob import glob
 from tqdm import tqdm
 from config import cfg
-from config import resnet18_backbone, resnet34_backbone
+from config import resnet18_backbone, resnet34_backbone, resnet50_backbone
 from config import kernel_head_light
 from config import fpn_light
 from compose import Compose
@@ -38,7 +38,8 @@ class LoadImage(object):
         else:
             results['filename'] = None 
 
-        img = np.empty((self.height, self.width, 3))
+        # img = np.empty((self.height, self.width, 3))
+        img = (np.random.random((self.height, self.width, 3)) * 255).astype(np.uint8)
         results['img'] = img
         results['img_shape'] = img.shape
         results['ori_shape'] = img.shape
@@ -60,17 +61,20 @@ def speed_test(model_path, resolution):
     test_pipeline.append(Multest)
     test_pipeline = Compose(test_pipeline)
 
-    model_path = 'checkpoints/model_resnet18_epoch_30.pth'
-    cfg.backbone = resnet18_backbone
+    model_path = 'checkpoints/model_resnet50_epoch_36.pth'
+    cfg.backbone = resnet50_backbone
     cfg.kernel_head = kernel_head_light
-    cfg.fpn = fpn_light
+    # cfg.fpn = fpn_light
+    
     
     model = INS_HIS(cfg, pretrained=model_path, mode='test')
     model = model.cuda()
 
-    start_time = time.time()
+    start_time = 0
+    consumed_time = 0
+
     count = 0
-    for i in tqdm(range(5000)):
+    for i in tqdm(range(1000)):
 
         data = dict(img='tmp')
         data = test_pipeline(data)
@@ -78,14 +82,15 @@ def speed_test(model_path, resolution):
         img = imgs[0].cuda().unsqueeze(0)
         img_info = data['img_metas']
 
+        start_time = time.time()
         with torch.no_grad():
             seg_result = model.forward(img=[img], img_meta=[img_info], return_loss=False)
 
+        consumed_time += (time.time() - start_time)
         count += 1
 
-    end_time = time.time()
 
-    fps = (count / (end_time - start_time))
+    fps = (count / (consumed_time))
 
     print('....')
     print('FPS on resolution[{}x{}]: {}'.format(resolution[0], resolution[1], fps))

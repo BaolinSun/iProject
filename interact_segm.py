@@ -100,7 +100,6 @@ def interact_segm(model_path, input_source):
         def drawbbox(pos):
             img_mask = cv2.imread(input_mask)
             
-            start_time = time.time()
             ix, iy, x, y = pos[0], pos[1], pos[2], pos[3]    
 
             cv2.rectangle(img_ori, (ix, iy), (x, y), (0, 255, 0), 1)
@@ -116,7 +115,7 @@ def interact_segm(model_path, input_source):
             img = imgs[0].cuda().unsqueeze(0)
             img_info = data['img_metas']
 
-            
+            start_time = time.time()
             with torch.no_grad():
                 seg_result = model.forward(img=[img], img_meta=[img_info], return_loss=False)
                 if seg_result[0] == None:
